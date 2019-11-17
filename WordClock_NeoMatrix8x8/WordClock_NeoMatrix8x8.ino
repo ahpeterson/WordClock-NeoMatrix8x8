@@ -80,7 +80,6 @@ uint64_t mask;
 #define TEN      mask |= 0x1010100
 #define ELEVEN   mask |= 0x3F00
 #define TWELVE   mask |= 0xF600
-#define ZERO     mask |= 0x80 // This is just to show an 'O', for printing the year
 #define ANDYDORO mask |= 0x8901008700000000
 
 // define pins
@@ -131,56 +130,6 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, NEOPIN,
                             NEO_MATRIX_TOP  + NEO_MATRIX_LEFT +
                             NEO_MATRIX_ROWS + NEO_MATRIX_PROGRESSIVE,
                             NEO_GRB         + NEO_KHZ800);
-
-static void displayNumber(int digits, int n) {
-  int i;
-
-  for (i = digits-1; i >= 0; i--) {
-    int multiplier = (int)pow((int)10, (int)i);
-    int digit = (int)n/(int)multiplier;
-
-    n = (int)n % (int)multiplier;
-    mask = 0;
-    switch(digit) {
-      case 0:
-        ZERO;
-        break;
-      case 1:
-        ONE;
-        break;
-      case 2:
-        TWO;
-        break;
-      case 3:
-        THREE;
-        break;
-      case 4:
-        FOUR;
-        break;
-      case 5:
-        FIVE;
-        break;
-      case 6:
-        SIX;
-        break;
-      case 7:
-        SEVEN;
-        break;
-      case 8:
-        EIGHT;
-        break;
-      case 9:
-        NINE;
-        break;
-      default:
-        TEN;
-        break;
-    }
-
-    applyMask();
-    delay(2000);
-  }
-}
 
 void setup() {
   // put your setup code here, to run once:
