@@ -1,3 +1,4 @@
+
 /*
    WORD CLOCK - 8x8 NeoPixel Desktop Edition
    by Andy Doro
@@ -79,6 +80,7 @@ uint64_t mask;
 #define TEN      mask |= 0x1010100
 #define ELEVEN   mask |= 0x3F00
 #define TWELVE   mask |= 0xF600
+#define ZERO     mask |= 0x80 // This is just to show an 'O', for printing the year
 #define ANDYDORO mask |= 0x8901008700000000
 
 // define pins
@@ -101,7 +103,7 @@ uint64_t mask;
 #define SHIFTDELAY 100   // controls color shifting speed
 
 
-RTC_DS1307 RTC; // Establish clock object
+RTC_DS3231 RTC; // Establish clock object
 DST_RTC dst_rtc; // DST object
 
 DateTime theTime; // Holds current clock time
@@ -112,7 +114,7 @@ int j;   // an integer for the color shifting effect
 // https://en.wikipedia.org/wiki/Daylight_saving_time_by_country
 // Use 1 if you observe DST, 0 if you don't. This is programmed for DST in the US / Canada. If your territory's DST operates differently,
 // you'll need to modify the code in the calcTheTime() function to make this work properly.
-//#define OBSERVE_DST 1
+#define OBSERVE_DST 1
 
 
 // Parameter 1 = number of pixels in strip
@@ -130,12 +132,61 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, NEOPIN,
                             NEO_MATRIX_ROWS + NEO_MATRIX_PROGRESSIVE,
                             NEO_GRB         + NEO_KHZ800);
 
+static void displayNumber(int digits, int n) {
+  int i;
+
+  for (i = digits-1; i >= 0; i--) {
+    int multiplier = (int)pow((int)10, (int)i);
+    int digit = (int)n/(int)multiplier;
+
+    n = (int)n % (int)multiplier;
+    mask = 0;
+    switch(digit) {
+      case 0:
+        ZERO;
+        break;
+      case 1:
+        ONE;
+        break;
+      case 2:
+        TWO;
+        break;
+      case 3:
+        THREE;
+        break;
+      case 4:
+        FOUR;
+        break;
+      case 5:
+        FIVE;
+        break;
+      case 6:
+        SIX;
+        break;
+      case 7:
+        SEVEN;
+        break;
+      case 8:
+        EIGHT;
+        break;
+      case 9:
+        NINE;
+        break;
+      default:
+        TEN;
+        break;
+    }
+
+    applyMask();
+    delay(2000);
+  }
+}
 
 void setup() {
   // put your setup code here, to run once:
 
   //Serial for debugging
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   // set pinmodes
   pinMode(NEOPIN, OUTPUT);
@@ -151,26 +202,26 @@ void setup() {
   // start clock
   Wire.begin();  // Begin I2C
   RTC.begin();   // begin clock
-
-  if (! RTC.isrunning()) {
+  
+  if (RTC.lostPower() ) {
     Serial.println("RTC is NOT running!");
+   
     // following line sets the RTC to the date & time this sketch was compiled
-    RTC.adjust(DateTime(__DATE__, __TIME__));
+    DateTime bootstrapTime = DateTime(F(__DATE__), F(__TIME__));
+    RTC.adjust(bootstrapTime);
     // DST? If we're in it, let's subtract an hour from the RTC time to keep our DST calculation correct. This gives us
     // Standard Time which our DST check will add an hour back to if we're in DST.
-    DateTime standardTime = RTC.now();
-    if (dst_rtc.checkDST(standardTime) == true) { // check whether we're in DST right now. If we are, subtract an hour.
-      standardTime = standardTime.unixtime() - 3600;
+    if (dst_rtc.checkDST(bootstrapTime) == true) {  // check whether we're in DST right now. If we are, subtract an hour.
+      bootstrapTime = bootstrapTime.unixtime() - 3600;
     }
-    RTC.adjust(standardTime);
+    RTC.adjust(bootstrapTime);
   }
-
 
   matrix.begin();
   matrix.setBrightness(DAYBRIGHTNESS);
   matrix.fillScreen(0); // Initialize all pixels to 'off'
   matrix.show();
-
+  theTime = dst_rtc.calculateTime(RTC.now());
   // startup sequence... do colorwipe?
   // delay(500);
   // rainbowCycle(20);
@@ -191,8 +242,4 @@ void loop() {
   displayTime();
 
   //mode_moon(); // uncomment to show moon mode instead!
-
-
 }
-
-
