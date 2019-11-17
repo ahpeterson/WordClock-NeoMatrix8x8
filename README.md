@@ -1,6 +1,6 @@
  WORD CLOCK - NeoMatrix 8x8 Desktop Edition
 ================
- by Andy Doro & Dano Wall
+ by Andy Doro & Dano Wall, chnaged to DS3231 and MetroMini by Alec Peterson
  
 https://andydoro.com/wordclockdesktop/
 
@@ -11,8 +11,8 @@ For more information, follow this guide: https://learn.adafruit.com/neomatrix-8x
 Hardware:
 -------
  
- - [Trinket Pro 5V](https://www.adafruit.com/product/2000) (should work with other Arduino-compatibles with minor modifications) 
- - [DS1307 RTC breakout](https://www.adafruit.com/products/3296)
+ - [Adafruit MetroMini](https://www.adafruit.com/product/2590) (should work with other Arduino-compatibles with minor modifications) 
+ - [DS3231 RTC breakout](https://www.adafruit.com/product/3013) (the DS3231 is far more accurate)
  - [NeoPixel NeoMatrix 8x8](https://www.adafruit.com/products/1487)
  - laser cut faceplate & enclosure
  
@@ -31,9 +31,8 @@ This code requires the following libraries:
 Wiring:
 -------
 
- - Solder DS1307 breakout to Trinket Pro, A2 to GND, A3 to PWR, A4 to SDA, A5 to SCL  
-   If you leave off / clip the unused SQW pin on the RTC breakout, the breakout can sit right on top of the Trinket Pro for a compact design! It'll be difficult to reach the Trinket Pro reset button, but you can activate the bootloader by plugging in the USB.
- - Solder NeoMatrix 5V to Trinket 5V, GND to GND, DIN to Trinket Pro pin 8.
+ - Solder DS3231 breakout to the MetroMini, A2 to GND, A3 to PWR, A4 to SDA, A5 to SCL  
+ - Solder NeoMatrix 5V to MetroMini 5V, GND to GND, DIN to MetroMini pin 8.
  
 
 grid pattern:
