@@ -1,13 +1,15 @@
-
 /*
+   An update of 
    WORD CLOCK - 8x8 NeoPixel Desktop Edition
    by Andy Doro
 
    A word clock using NeoPixel RGB LEDs for a color shift effect.
+   Updates: Metro Mini in place of discontinued Trinket 5v
+   higher accuracy RTC to eliminate time drift (oritginal RTC very temp. sensitive)
 
    Hardware:
-   - Trinket Pro 5V (should work with other Arduino-compatibles with minor modifications)
-   - DS1307 RTC breakout
+   - Metro Mini - Adafruit #2590 (should work with other Arduino-compatibles with minor modifications)
+   - DS3231 RTC breakout
    - NeoPixel NeoMatrix 8x8
 
 
@@ -23,11 +25,23 @@
 
 
    Wiring:
-   - Solder DS1307 breakout to Trinket Pro, A2 to GND, A3 to PWR, A4 to SDA, A5 to SCL
-   If you leave off / clip the unused SQW pin on the RTC breakout, the breakout can sit right on top of the Trinket Pro
-   for a compact design! It'll be difficult to reach the Trinket Pro reset button, but you can activate the bootloader by
-   plugging in the USB.
-   - Solder NeoMatrix 5V to Trinket 5V, GND to GND, DIN to Trinket Pro pin 8.
+   For connecting the DS3231 to the Metro Mini
+
+   VIN - A3
+   GND - A2
+   SDA - A4
+   SCL - A5
+
+   For connecting the NeoMatrix 8x8 to the Metro-mini
+   5V -  Mm 5V
+   GND - Mm GND
+   DIN - Mm 8
+
+   
+
+   - Solder DS_3231 breakout to MetroMini, A2 to GND, A3 to Vin, A4 to SDA, A5 to SCL
+
+   - Solder NeoMatrix 5V to MetroMini 5V, GND to GND, DIN to MetroMini pin 8.
 
 
    grid pattern
@@ -84,8 +98,8 @@ uint64_t mask;
 
 // define pins
 #define NEOPIN 8  // connect to DIN on NeoMatrix 8x8
-#define RTCGND A2 // use this as DS1307 breakout ground 
-#define RTCPWR A3 // use this as DS1307 breakout power
+#define RTCGND A2 // use this as DS3231 breakout ground (GND)
+#define RTCPWR A3 // use this as DS3231 breakout power (Vin)
 
 
 // brightness based on time of day- could try warmer colors at night?
@@ -101,6 +115,13 @@ uint64_t mask;
 #define FLASHDELAY 250  // delay for startup "flashWords" sequence
 #define SHIFTDELAY 100   // controls color shifting speed
 
+// monochrome mode?  Here are some colors to choose
+#define WHITE 200, 255, 255
+#define GREEN 0,255,0 
+#define RED 255, 0, 0
+#define BLUE 0, 0, 255
+#define TEAL 0, 128, 128
+#define VIOLET 127, 0, 255
 
 RTC_DS3231 RTC; // Establish clock object
 DST_RTC dst_rtc; // DST object
@@ -131,46 +152,52 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, NEOPIN,
                             NEO_MATRIX_ROWS + NEO_MATRIX_PROGRESSIVE,
                             NEO_GRB         + NEO_KHZ800);
 
+
 void setup() {
   // put your setup code here, to run once:
 
   //Serial for debugging
   Serial.begin(9600);
 
+  Serial.println("Starting setup");
   // set pinmodes
   pinMode(NEOPIN, OUTPUT);
 
-  // set analog pins to power DS1307 breakout!
+  // set analog pins to power DS_3231 breakout!
   pinMode(RTCGND, OUTPUT); // analog 2
   pinMode(RTCPWR, OUTPUT); // analog 3
 
   // set them going!
   digitalWrite(RTCGND, LOW);  // GND for RTC
-  digitalWrite(RTCPWR, HIGH); // PWR for RTC
+  digitalWrite(RTCPWR, HIGH); // VIN for RTC
 
   // start clock
-  Wire.begin();  // Begin I2C
+  Serial.println("Starting RTC");
   RTC.begin();   // begin clock
-  
-  if (RTC.lostPower() ) {
+  Serial.println("Started RTC");
+
+  if (RTC.lostPower()) {
     Serial.println("RTC is NOT running!");
-   
     // following line sets the RTC to the date & time this sketch was compiled
-    DateTime bootstrapTime = DateTime(F(__DATE__), F(__TIME__));
-    RTC.adjust(bootstrapTime);
+    RTC.adjust(DateTime(__DATE__, __TIME__));
     // DST? If we're in it, let's subtract an hour from the RTC time to keep our DST calculation correct. This gives us
     // Standard Time which our DST check will add an hour back to if we're in DST.
-    if (dst_rtc.checkDST(bootstrapTime) == true) {  // check whether we're in DST right now. If we are, subtract an hour.
-      bootstrapTime = bootstrapTime.unixtime() - 3600;
+    DateTime standardTime = RTC.now();
+    if (dst_rtc.checkDST(standardTime) == true) { // check whether we're in DST right now. If we are, subtract an hour.
+      standardTime = standardTime.unixtime() - 3600;
     }
-    RTC.adjust(bootstrapTime);
+    RTC.adjust(standardTime);
   }
+  else {
+    Serial.println("RTC running, using existing time.");
+  }
+
 
   matrix.begin();
   matrix.setBrightness(DAYBRIGHTNESS);
   matrix.fillScreen(0); // Initialize all pixels to 'off'
   matrix.show();
-  theTime = dst_rtc.calculateTime(RTC.now());
+
   // startup sequence... do colorwipe?
   // delay(500);
   // rainbowCycle(20);
@@ -190,5 +217,7 @@ void loop() {
   adjustBrightness();
   displayTime();
 
-  //mode_moon(); // uncomment to show moon mode instead!
+  //mode_moon(); // uncomment to show moon mode instead.  Also be sure to comment "displayTime"
+
+
 }
