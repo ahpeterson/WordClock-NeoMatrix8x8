@@ -35,6 +35,23 @@ Wiring:
  - Solder NeoMatrix 5V to MetroMini 5V, GND to GND, DIN to MetroMini pin 8.
  
 
+Setting the time:
+-------
+
+The word clock only sets the RTC when the DS3231 reports it lost power, and then
+it uses the time the sketch was compiled. If the RTC's battery kept it running
+with the wrong time (for example UTC), the clock will stay wrong. To fix it, use
+the `set_rtc` utility, which sets the RTC to your Mac's local standard time:
+
+```
+set_rtc/set_rtc.sh upload   # put the utility sketch on the clock
+set_rtc/set_rtc.sh set      # set the RTC and print it back
+```
+
+Then re-upload `WordClock_NeoMatrix8x8`. The RTC holds standard time; the clock
+adds the daylight saving hour itself. Close the Arduino IDE's Serial Monitor
+first, or the port will be busy.
+
 grid pattern:
 -------
 
